@@ -1,15 +1,23 @@
 # patreon-java
 Interact with the Patreon API via OAuth.
 
-[![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.patreon/patreon/badge.svg)]
+> **It's a fork which support Patreon API v2**!!
 
-Get the artifact from [Maven](http://search.maven.org/#search|ga|1|g%3A%22com.patreon%22%20AND%20a%3A%22patreon%22)
-```xml
-<dependency>
-    <groupId>com.patreon</groupId>
-    <artifactId>patreon</artifactId>
-    <version>0.4.2</version>
-</dependency>
+Step 0. Install the library
+---
+
+Add the following to your `build.gradle.kts` file:
+
+```kotlin
+repositories {
+    // The fork is not published to maven central yet, so you need to add the jitpack repository
+    maven("https://jitpack.io")
+}
+
+dependencies {
+    // Or specify a specific commit hash instead of master-SNAPSHOT
+    implementation("com.github.devlikeapro:patreon-java:master-SNAPSHOT")
+}
 ```
 
 
