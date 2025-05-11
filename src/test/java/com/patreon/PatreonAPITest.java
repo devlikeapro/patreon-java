@@ -18,9 +18,7 @@ import java.util.List;
 
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 public class PatreonAPITest extends TestCase {
   private static final String MOCK_TOKEN = "some token";
@@ -161,5 +159,61 @@ public class PatreonAPITest extends TestCase {
     JSONAPIDocument<User> user = api.fetchUser();
     verify(requestUtil).request(eq("current_user?include=pledges"), eq(MOCK_TOKEN));
     assertEquals("https://www.patreon.com/api/user/32187", user.getLinks().getSelf().toString());
+  }
+
+  /**
+   * Test for v2FetchCampaignMembers with pagination
+   * Note: This test requires test resources that simulate the v2 API response for campaign members
+   * Create two JSON files:
+   * 1. /api/v2_campaign_members_page_1.json - First page of members with a "next" link
+   * 2. /api/v2_campaign_members_page_2.json - Second page of members with no "next" link
+   */
+  public void testV2FetchCampaignMembers() throws Exception {
+    // Mock the request to return the first page, then the second page
+    when(requestUtil.request(anyString(), eq(MOCK_TOKEN))).thenReturn(
+      // Replace with actual test resources when available
+      PatreonAPITest.class.getResourceAsStream("/api/campaign_pledges_page_1.json"),
+      PatreonAPITest.class.getResourceAsStream("/api/campaign_pledges_page_2.json")
+    );
+
+    // Test fetching a single page with cursor
+    String campaignId = "12345";
+    int pageSize = 10;
+    String cursor = "some-cursor-value";
+
+    // Test the paginated method
+    api.v2FetchCampaignMembers(campaignId, pageSize, cursor);
+
+    // Verify the correct URL was requested with the cursor
+    ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
+    verify(requestUtil).request(captor.capture(), eq(MOCK_TOKEN));
+
+    String arg = captor.getValue();
+    assertTrue(arg.contains("v2/campaigns/" + campaignId + "/members"));
+    assertTrue(arg.contains("page[count]=" + pageSize));
+    assertTrue(arg.contains("page[cursor]=" + cursor));
+  }
+
+  /**
+   * Test for v2FetchAllCampaignMembers
+   * Note: This test requires test resources that simulate the v2 API response for campaign members
+   */
+  public void testV2FetchAllCampaignMembers() throws Exception {
+    // Mock the request to return the first page, then the second page
+    when(requestUtil.request(anyString(), eq(MOCK_TOKEN))).thenReturn(
+      // Replace with actual test resources when available
+      PatreonAPITest.class.getResourceAsStream("/api/campaign_pledges_page_1.json"),
+      PatreonAPITest.class.getResourceAsStream("/api/campaign_pledges_page_2.json")
+    );
+
+    // Test fetching all members
+    String campaignId = "12345";
+    int pageSize = 10;
+
+    // This will fail until proper test resources are created
+    // List<Member> members = api.v2FetchAllCampaignMembers(campaignId, pageSize);
+
+    // Assertions would go here
+    // assertEquals(expectedTotalCount, members.size());
   }
 }

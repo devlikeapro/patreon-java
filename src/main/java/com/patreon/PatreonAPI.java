@@ -105,7 +105,29 @@ public class PatreonAPI {
     );
   }
 
+  /**
+   * Retrieve members for the specified campaign
+   *
+   * @param campaignId id for campaign to retrieve
+   * @param count      how many members to return
+   * @return the list of members
+   * @throws IOException Thrown when the GET request failed
+   */
   public JSONAPIDocument<List<Member>> v2FetchCampaignMembers(String campaignId, Integer count) throws IOException {
+    return v2FetchCampaignMembers(campaignId, count, null);
+  }
+
+  /**
+   * Retrieve members for the specified campaign
+   *
+   * @param campaignId id for campaign to retrieve
+   * @param count      how many members to return
+   * @param pageCursor A cursor retrieved from a previous API call, or null for the initial page.
+   *                   See {@link #getNextCursorFromDocument(JSONAPIDocument)}
+   * @return the page of members
+   * @throws IOException Thrown when the GET request failed
+   */
+  public JSONAPIDocument<List<Member>> v2FetchCampaignMembers(String campaignId, Integer count, String pageCursor) throws IOException {
     // Check count is less than 1000
     if (count > 1000) {
       throw new IllegalArgumentException("Count must be less than 1000");
@@ -115,6 +137,11 @@ public class PatreonAPI {
       .setPath(String.format("v2/campaigns/%s/members", campaignId))
       .addParameter("include", "user,currently_entitled_tiers")
       .addParameter("page[count]", String.valueOf(count));
+
+    if (pageCursor != null) {
+      pathBuilder.addParameter("page[cursor]", pageCursor);
+    }
+
     addFieldsParam(pathBuilder, Member.class, Member.MemberField.getDefaultFields());
     addFieldsParam(pathBuilder, UserV2.class, UserV2.UserField.getDefaultFields());
     addFieldsParam(pathBuilder, Tier.class, Tier.TierField.getDefaultFields());
@@ -135,6 +162,30 @@ public class PatreonAPI {
       getDataStream(pathBuilder.toString()),
       Member.class
     );
+  }
+
+  /**
+   * Retrieve all members for the specified campaign
+   *
+   * @param campaignId id for campaign to retrieve
+   * @param pageSize   how many members to return per page
+   * @return the list of all members
+   * @throws IOException Thrown when the GET request failed
+   */
+  public List<Member> v2FetchAllCampaignMembers(String campaignId, int pageSize) throws IOException {
+    Set<Member> members = new HashSet<>();
+    String cursor = null;
+
+    while (true) {
+      JSONAPIDocument<List<Member>> membersPage = v2FetchCampaignMembers(campaignId, pageSize, cursor);
+      members.addAll(membersPage.get());
+      cursor = getNextCursorFromDocument(membersPage);
+      if (cursor == null) {
+        break;
+      }
+    }
+
+    return new ArrayList<>(members);
   }
 
   /**
